@@ -20,15 +20,15 @@ module.exports = () => {
             const pathToFolder = await createFolder();
             const pathtoFile = `${pathToFolder}/video.webm`;
             await fs.writeFile(pathtoFile, message)
-            const video = await new ffmpeg(pathtoFile);
-            video
-              .setVideoFormat(".mp4")
-              .save(`${pathToFolder}/formattedVideo.avi`, (err, file) => {
-                if(err) {
-                  return console.log(err);
-                }
-                console.log("file: ", file);
-              })
+            // const video = await new ffmpeg(pathtoFile);
+            // video
+            //   .setVideoFormat(".mp4")
+            //   .save(`${pathToFolder}/formattedVideo.avi`, (err, file) => {
+            //     if(err) {
+            //       return console.log(err);
+            //     }
+            //     console.log("file: ", file);
+            //   })
 
             
           } catch (error) {
