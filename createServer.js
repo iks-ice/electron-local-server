@@ -1,11 +1,13 @@
-module.exports = () => {
-  const ffmpeg = require("ffmpeg");
-  const {v4: uuid} = require("uuid");
-  const fs = require("fs/promises");
-  const path = require("path");
-  const WebSocket = require('ws');
-  const wsServer = new WebSocket.Server({ port: 9000 });
+const ffmpeg = require("ffmpeg");
+const {v4: uuid} = require("uuid");
+const {mkdir, writeFile, readFile} = require("fs/promises");
+const fs = require("fs");
+const path = require("path");
+const WebSocket = require('ws');
 
+module.exports = () => {
+
+  const wsServer = new WebSocket.Server({ port: 9000 });
   wsServer.on('connection', onConnect);
 
   function onConnect(wsClient) {
@@ -17,20 +19,31 @@ module.exports = () => {
 
       wsClient.on('message', async (message) => {
           try {
+            const pathToVideosFolder = path.join(__dirname, "videos");
+            if (!fs.existsSync(pathToVideosFolder)) {
+              await mkdir(pathToVideosFolder);
+            }
             const pathToFolder = await createFolder();
-            const pathtoFile = `${pathToFolder}/video.webm`;
-            await fs.writeFile(pathtoFile, message)
-            // const video = await new ffmpeg(pathtoFile);
-            // video
-            //   .setVideoFormat(".mp4")
-            //   .save(`${pathToFolder}/formattedVideo.avi`, (err, file) => {
-            //     if(err) {
-            //       return console.log(err);
-            //     }
-            //     console.log("file: ", file);
-            //   })
+            const pathToFile = `${pathToFolder}/video.webm`;
+            await writeFile(pathToFile, message);
 
-            
+            const savedVideoPath = `${pathToFolder}/converted-video.mp4`;
+            new ffmpeg(pathToFile, (err, video) => {
+              if (err) {
+                return wsClient.send(new Error(err));
+              }
+              video
+              .setVideoFormat("mp4")
+              .save(savedVideoPath, async (err, file) => {
+                if(err) {
+                  return console.log(err);
+                }
+                console.log("start reading", file);
+                const data = await readFile(savedVideoPath);
+                console.log("sending back data", data);
+                wsClient.send(data);
+              });
+            });
           } catch (error) {
               console.log('Ошибка', error);
           }
@@ -38,8 +51,9 @@ module.exports = () => {
   }
   async function createFolder (folderName=uuid()) {
     const pathToFolder = path.join(__dirname, "videos", folderName);
-    await fs.mkdir(pathToFolder);
+    await mkdir(pathToFolder);
     return pathToFolder;
   }
+  
   console.log('Сервер запущен на 9000 порту');
 }

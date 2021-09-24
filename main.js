@@ -5,6 +5,7 @@ const { app, BrowserWindow } = require('electron')
 const path = require('path')
 const createServer = require("./createServer");
 
+console.log();
 function createWindow () {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
